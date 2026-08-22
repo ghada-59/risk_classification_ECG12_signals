@@ -1,0 +1,12 @@
+{
+  "n": 100,
+  "device": "cpu",
+  "checkpoint_loaded": true,
+  "p50_ms": 177.251,
+  "p95_ms": 227.45,
+  "p99_ms": 263.529,
+  "mean_ms": 139.746,
+  "max_ms": 270.395,
+  "target_ms": 3000,
+  "passes_target": true
+}

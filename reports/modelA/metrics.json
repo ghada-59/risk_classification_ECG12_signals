@@ -1,0 +1,61 @@
+{
+  "metrics": {
+    "per_class": {
+      "normal": {
+        "tp": 664,
+        "fp": 415,
+        "fn": 74,
+        "tn": 1045,
+        "sensitivity": 0.8997,
+        "specificity": 0.7158,
+        "ppv": 0.6154,
+        "f1": 0.7309,
+        "auc": 0.8842,
+        "support": 738
+      },
+      "suspect": {
+        "tp": 559,
+        "fp": 29,
+        "fn": 641,
+        "tn": 969,
+        "sensitivity": 0.4658,
+        "specificity": 0.9709,
+        "ppv": 0.9507,
+        "f1": 0.6253,
+        "auc": 0.8549,
+        "support": 1200
+      },
+      "critique": {
+        "tp": 205,
+        "fp": 84,
+        "fn": 55,
+        "tn": 1854,
+        "sensitivity": 0.7885,
+        "specificity": 0.9567,
+        "ppv": 0.7093,
+        "f1": 0.7468,
+        "auc": 0.9546,
+        "support": 260
+      }
+    },
+    "global": {
+      "macro_auc": 0.8979,
+      "weighted_auc": 0.8765,
+      "accuracy": 0.6856
+    }
+  },
+  "auc_ci95": {
+    "normal": [
+      0.8723,
+      0.8985
+    ],
+    "suspect": [
+      0.8399,
+      0.8702
+    ],
+    "critique": [
+      0.9426,
+      0.9654
+    ]
+  }
+}

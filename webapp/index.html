@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>Modèle A — Dashboard ECG 12 leads</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22">
+          <path d="M2 16 H8 L11 8 L15 24 L19 12 L22 18 H30"
+                fill="none" stroke="currentColor" stroke-width="2.4"
+                stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <div class="brand-text">
+        <h1>Modèle A</h1>
+        <p class="subtitle">Classification ECG 12 leads · CNN1D + BiLSTM</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="settingsBtn" type="button" class="icon-btn" title="Paramètres" aria-label="Paramètres">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div id="healthPill" class="health-pill" title="État API">
+        <span class="health-dot"></span>
+        <span id="healthText">connexion…</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="layout">
+    <!-- ============ SIDEBAR : sample picker + upload ============ -->
+    <aside class="sidebar panel">
+      <div class="panel-head">
+        <h2>Échantillons</h2>
+        <button id="reloadSamples" type="button" class="icon-btn small" title="Rafraîchir (R)" aria-label="Rafraîchir">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
+            <path d="M20.49 15A9 9 0 0 1 5.64 18.36L1 14"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="filters">
+        <button class="chip" data-filter="all">tous</button>
+        <button class="chip chip-normal" data-filter="normal">normal</button>
+        <button class="chip chip-suspect" data-filter="suspect">suspect</button>
+        <button class="chip chip-critique" data-filter="critique">critique</button>
+      </div>
+
+      <ul id="sampleList" class="sample-list" role="listbox" aria-label="Liste des ECG"></ul>
+      <p id="sampleEmpty" class="empty hidden">Aucun ECG dans ce filtre.</p>
+
+      <div class="divider"><span>ou</span></div>
+
+      <button id="openFeatureFormBtn" type="button" class="btn btn-ghost btn-full">
+        Saisir les mesures cliniques
+      </button>
+      <p class="hint">Ouvrir le formulaire de saisie manuelle (HRV, QRS, PR, QT…).</p>
+    </aside>
+
+    <!-- ============ ECG VIEWER ============ -->
+    <section class="panel viewer" aria-labelledby="viewerTitle">
+      <div class="panel-head">
+        <div>
+          <h2 id="viewerTitle">Signal 12 leads</h2>
+          <p id="viewerMeta" class="muted small">Sélectionnez un ECG pour commencer.</p>
+        </div>
+        <div class="viewer-actions">
+          <span class="kbd-hint">
+            <kbd>←</kbd><kbd>→</kbd> naviguer · <kbd>Space</kbd> prédire
+          </span>
+          <button id="predictBtn" type="button" class="btn btn-primary" disabled>
+            <span class="btn-label">Analyser ECG</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="ecgCanvas" aria-label="ECG 12 leads"></canvas>
+        <div id="canvasEmpty" class="canvas-empty">
+          <svg viewBox="0 0 64 64" width="48" height="48" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
+            <path d="M4 32 h12 l5-16 l8 32 l8-24 l6 12 h17"/>
+          </svg>
+          <p>Aucun signal chargé</p>
+        </div>
+        <div id="canvasSkeleton" class="canvas-skeleton hidden"></div>
+      </div>
+
+      <ul id="leadsLegend" class="legend" aria-label="Légende des leads"></ul>
+    </section>
+
+    <!-- ============ PREDICTION RESULT ============ -->
+    <section class="panel result" id="resultPanel" data-class="" aria-live="polite">
+      <div class="panel-head">
+        <h2>Prédiction</h2>
+        <span id="resultTimestamp" class="timestamp">—</span>
+      </div>
+
+      <div id="resultEmpty" class="result-empty">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.5">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <p>Lancez l'analyse pour obtenir une classification.</p>
+      </div>
+
+      <div id="resultBody" class="result-body hidden">
+        <div class="result-headline">
+          <div class="result-class">
+            <span id="resultLabel" class="result-label">—</span>
+            <span id="resultMatch" class="result-match"></span>
+          </div>
+          <div class="confidence-ring" aria-label="Confiance">
+            <svg viewBox="0 0 64 64" width="64" height="64">
+              <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="none"/>
+              <circle id="ringFill" cx="32" cy="32" r="28" stroke="currentColor" stroke-width="6"
+                      fill="none" stroke-linecap="round" stroke-dasharray="176" stroke-dashoffset="176"
+                      transform="rotate(-90 32 32)"/>
+            </svg>
+            <span id="ringLabel" class="ring-label">—</span>
+          </div>
+        </div>
+
+        <div class="risk-block">
+          <div class="risk-head">
+            <span class="muted small">Score de risque</span>
+            <strong id="riskValue" class="risk-value">—</strong>
+          </div>
+          <div class="risk-track">
+            <div id="riskFill" class="risk-fill"></div>
+            <span class="risk-zone z-normal"></span>
+            <span class="risk-zone z-suspect"></span>
+            <span class="risk-zone z-critique"></span>
+          </div>
+          <div class="risk-axis"><span>0</span><span>0.5</span><span>1</span></div>
+        </div>
+
+        <ul class="probs">
+          <li class="prob-row">
+            <span class="prob-name">normal</span>
+            <div class="prob-bar"><div id="probNormal" class="prob-fill p-normal"></div></div>
+            <span id="probNormalVal" class="prob-val">—</span>
+          </li>
+          <li class="prob-row">
+            <span class="prob-name">suspect</span>
+            <div class="prob-bar"><div id="probSuspect" class="prob-fill p-suspect"></div></div>
+            <span id="probSuspectVal" class="prob-val">—</span>
+          </li>
+          <li class="prob-row">
+            <span class="prob-name">critique</span>
+            <div class="prob-bar"><div id="probCritique" class="prob-fill p-critique"></div></div>
+            <span id="probCritiqueVal" class="prob-val">—</span>
+          </li>
+        </ul>
+
+        <div class="result-foot">
+          <span class="muted small">Latence inférence</span>
+          <strong id="metaLatency" class="mono">—</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HISTORY ============ -->
+    <section class="panel history" aria-labelledby="histTitle">
+      <div class="panel-head">
+        <h2 id="histTitle">Historique</h2>
+        <button id="clearHistory" type="button" class="link-btn" title="Vider l'historique">vider</button>
+      </div>
+      <ul id="historyList" class="history-list" aria-live="polite"></ul>
+      <p id="historyEmpty" class="empty">Aucune prédiction encore.</p>
+    </section>
+  </main>
+
+  <footer role="contentinfo">
+    <p>
+      <strong>Modèle A</strong> — usage académique uniquement.
+      Système d'aide à la décision, ne remplace pas un avis médical.
+      Données PTB-XL anonymisées (RGPD).
+    </p>
+  </footer>
+
+  <!-- ============ FEATURE FORM MODAL ============ -->
+  <dialog id="featureDialog" class="dialog feature-dialog">
+    <form id="featureForm" class="dialog-form feature-form" novalidate>
+      <header>
+        <h3>Saisie manuelle</h3>
+        <button type="button" class="icon-btn small" id="closeFeatureForm" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </header>
+
+      <div class="dialog-body">
+        <p class="muted small">Entrez les 12 mesures cliniques extraites de l'ECG.</p>
+        <div class="feature-grid">
+          <label class="feature-field">
+            <span>FC moyenne <em>bpm</em></span>
+            <input type="number" name="hr_mean" step="any" placeholder="72" required />
+          </label>
+          <label class="feature-field">
+            <span>FC écart-type <em>bpm</em></span>
+            <input type="number" name="hr_std" step="any" placeholder="8" required />
+          </label>
+          <label class="feature-field">
+            <span>SDNN <em>ms</em></span>
+            <input type="number" name="sdnn" step="any" placeholder="50" required />
+          </label>
+          <label class="feature-field">
+            <span>RMSSD <em>ms</em></span>
+            <input type="number" name="rmssd" step="any" placeholder="35" required />
+          </label>
+          <label class="feature-field">
+            <span>pNN50 <em>%</em></span>
+            <input type="number" name="pnn50" step="any" placeholder="15" required />
+          </label>
+          <label class="feature-field">
+            <span>QRS moy. <em>ms</em></span>
+            <input type="number" name="qrs_width_mean" step="any" placeholder="90" required />
+          </label>
+          <label class="feature-field">
+            <span>QRS é-t. <em>ms</em></span>
+            <input type="number" name="qrs_width_std" step="any" placeholder="5" required />
+          </label>
+          <label class="feature-field">
+            <span>PR moy. <em>ms</em></span>
+            <input type="number" name="pr_interval_mean" step="any" placeholder="160" required />
+          </label>
+          <label class="feature-field">
+            <span>QT moy. <em>ms</em></span>
+            <input type="number" name="qt_interval_mean" step="any" placeholder="380" required />
+          </label>
+          <label class="feature-field">
+            <span>Niveau ST <em>mV</em></span>
+            <input type="number" name="st_level_mean" step="any" placeholder="0.0" required />
+          </label>
+          <label class="feature-field">
+            <span>Amplitude T <em>mV</em></span>
+            <input type="number" name="t_amplitude_mean" step="any" placeholder="0.3" required />
+          </label>
+          <label class="feature-field">
+            <span>Nbre battements</span>
+            <input type="number" name="n_beats" step="any" placeholder="10" required />
+          </label>
+        </div>
+      </div>
+
+      <footer>
+        <button type="button" class="btn btn-ghost" id="cancelFeatureForm">Annuler</button>
+        <button type="submit" class="btn btn-primary" id="featureSubmitBtn">
+          <span class="btn-label">Analyser</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ SETTINGS DRAWER ============ -->
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog" class="dialog-form">
+      <header>
+        <h3>Paramètres</h3>
+        <button type="button" class="icon-btn small" id="closeSettings" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </header>
+
+      <label class="field">
+        <span>URL de l'API</span>
+        <input id="apiUrlInput" type="url" placeholder="http://localhost:8000" />
+      </label>
+
+      <label class="field row">
+        <input id="autoPredict" type="checkbox" />
+        <span>Analyser automatiquement à la sélection</span>
+      </label>
+
+      <label class="field row">
+        <input id="ecgGrid" type="checkbox" checked />
+        <span>Afficher la grille ECG (1mm/5mm)</span>
+      </label>
+
+      <footer>
+        <button type="button" class="btn btn-ghost" id="resetSettings">réinitialiser</button>
+        <button type="submit" class="btn btn-primary">enregistrer</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ============ TOASTS ============ -->
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
